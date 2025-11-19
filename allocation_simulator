@@ -1,0 +1,35 @@
+"""
+Resource Allocation Simulator
+-----------------------------
+Linear optimization model for workload balancing between teams.
+Useful for People Ops & Business Ops modelling.
+"""
+
+import pulp
+
+
+# ---- LINEAR PROGRAM ----
+problem = pulp.LpProblem("Resource_Allocation", pulp.LpMinimize)
+
+# ---- TEAM HOUR VARIABLES ----
+TeamA = pulp.LpVariable("TeamA", lowBound=0, upBound=40)
+TeamB = pulp.LpVariable("TeamB", lowBound=0, upBound=40)
+
+# ---- OBJECTIVE: MINIMIZE TOTAL COST (hours) ----
+problem += 1.2 * TeamA + 1.0 * TeamB
+
+# ---- WORKLOAD CONSTRAINT ----
+problem += TeamA * 1.5 + TeamB * 2 >= 100
+
+# ---- SOLVE ----
+problem.solve()
+
+
+def main():
+    print("=== RESOURCE ALLOCATION RESULTS ===")
+    print("Team A Hours:", TeamA.value())
+    print("Team B Hours:", TeamB.value())
+
+
+if __name__ == "__main__":
+    main()
