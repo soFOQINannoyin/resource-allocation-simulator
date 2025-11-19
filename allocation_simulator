@@ -1,34 +1,85 @@
 """
-Resource Allocation Simulator
------------------------------
-Linear optimization model for workload balancing between teams.
-Useful for People Ops & Business Ops modelling.
+Data Insights Dashboard
+-----------------------
+A People/Operations analytics project that performs:
+- Productivity analysis
+- Efficiency scoring
+- Category distribution
+- Trend insights
+- KPI summarization
+
+This mirrors the analytical tasks done in Talent Ops
+and People Operations roles at Revolut.
 """
 
-import pulp
+import pandas as pd
+
+# -------------------------------------------------------------
+# LOAD DATA
+# -------------------------------------------------------------
+def load_data(path="../data/employee_task_data.csv"):
+    return pd.read_csv(path)
 
 
-# ---- LINEAR PROGRAM ----
-problem = pulp.LpProblem("Resource_Allocation", pulp.LpMinimize)
+# -------------------------------------------------------------
+# KPI CALCULATIONS
+# -------------------------------------------------------------
+def compute_kpis(df):
+    df["Efficiency"] = df["Tasks_Completed"] / df["Hours_Spent"]
+    df["Avg_Time_Per_Task"] = df["Hours_Spent"] / df["Tasks_Completed"]
 
-# ---- TEAM HOUR VARIABLES ----
-TeamA = pulp.LpVariable("TeamA", lowBound=0, upBound=40)
-TeamB = pulp.LpVariable("TeamB", lowBound=0, upBound=40)
+    kpis = {
+        "Total Employees": len(df),
+        "Total Tasks Completed": df["Tasks_Completed"].sum(),
+        "Avg Efficiency (tasks/hr)": df["Efficiency"].mean(),
+        "Avg Time per Task (hrs)": df["Avg_Time_Per_Task"].mean(),
+        "Top Performer": df.loc[df["Efficiency"].idxmax(), "Employee"],
+        "Lowest Performer": df.loc[df["Efficiency"].idxmin(), "Employee"],
+    }
 
-# ---- OBJECTIVE: MINIMIZE TOTAL COST (hours) ----
-problem += 1.2 * TeamA + 1.0 * TeamB
-
-# ---- WORKLOAD CONSTRAINT ----
-problem += TeamA * 1.5 + TeamB * 2 >= 100
-
-# ---- SOLVE ----
-problem.solve()
+    return df, kpis
 
 
+# -------------------------------------------------------------
+# CATEGORY ANALYSIS (HR, IT, Finance, etc.)
+# -------------------------------------------------------------
+def category_summary(df):
+    return df["Category"].value_counts()
+
+
+# -------------------------------------------------------------
+# PRINT DASHBOARD REPORT
+# -------------------------------------------------------------
+def print_report(df, kpis, category_counts):
+
+    print("\n=========== DATA INSIGHTS DASHBOARD ===========\n")
+
+    print("---------- Key KPIs ----------")
+    for k, v in kpis.items():
+        print(f"{k}: {v}")
+    print()
+
+    print("---------- Category Distribution ----------")
+    print(category_counts)
+    print()
+
+    print("---------- Efficiency Breakdown ----------")
+    print(df[["Employee", "Category", "Tasks_Completed", "Hours_Spent", "Efficiency"]])
+    print()
+
+    print("================================================\n")
+
+
+# -------------------------------------------------------------
+# MAIN PIPELINE
+# -------------------------------------------------------------
 def main():
-    print("=== RESOURCE ALLOCATION RESULTS ===")
-    print("Team A Hours:", TeamA.value())
-    print("Team B Hours:", TeamB.value())
+    df = load_data()
+
+    df, kpis = compute_kpis(df)
+    category_counts = category_summary(df)
+
+    print_report(df, kpis, category_counts)
 
 
 if __name__ == "__main__":
